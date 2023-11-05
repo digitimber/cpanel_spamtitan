@@ -1,78 +1,69 @@
-# cpanel_spamtitan
-a SpamTitan Module written to work with cPanel hooks to add domains to the relay list and update validation lists if enabled
+# New Update 11/5/23
+<hr>
 
-be gentle, we're new at this -
+With SpamTitan Updating their own code to support a RESTAPI (v3 as of this writing) we have attempted to update our script with the times. We've moved off of Perl and attempted a PHP script this time. 
+There were some shortcomings with the old script that this should resolve and just generally be more robust than previous.
+
+Be gentle, we're still new at this and if you would like to make our code better, please do!
   
-We created this repo to house our SpamTitan v7 module script(s) to integrate with cPanel v82
+We updated this repo to house our SpamTitan v8 RESTAPI v3 module script(s) to integrate with cPanel v110
 
-After we found SpamTitan, not being heavy coders, we struggled to create proper integration when new customers were signing up, changing MX records, or adding email addresses and/or forwarders
+After we found SpamTitan, not being heavy coders, we struggled to create proper integration when new customers were signing up, changing MX records, or cleaning up after termination of accounts.
 
 We eventually created something that worked rather well, and we wanted to share it with the world in case there were others in the same boat. 
 <hr>
-a few disclaimers -
+
+### A few disclaimers -
 <ul><li>we are not coders</li>
-<li>we did not follow proper coding proceedures or documentation (commenting and such)</li>
+<li>we did not follow proper coding procedures or documentation (commenting and such)</li>
 <li>this script is available as-is, and we take no responsibility for it being compatible or even working with your installations</li></ul>
 
-that being said, we welcome anyone who wants to help us maintain it, or improve it. If you have feature requests, please let us know and we will attempt to add them.
-
-questions, comments, and concerns can be directed to github(@)digitimber.com
+We welcome anyone who wants to help us maintain it or improve it. 
 
 Thank you to everyone who contributes to the world wide knowledge base, without you, a lot of us would be lost!
 <HR>
-  <b>ToDo:</b>
-  Create something that resembles debuging option for the log file to show the returned content of the request
+  
 
+### Currently tested versions:
+SpamTitan v8.00.46 and cPanel v110.0.14
 
-
-Currently tested versions:
-
-SpamTitan v7.05 and cPanel v82.0.16
 <HR>
   
-<b>How to Install</b>
+### How to Install
 
-Copy the STaddEmail.pm to /usr/local/cpanel on your cPanel server using the root user. Edit the file to update the $base_uri on line 19 to include your own spamtitan domain name or ip. Usually something like spamtitan.mycompany.com is what they suggest you create after signup.
+Create a directory /var/cpanel/spamtitan and copy the SpamTitanDomains.php to /var/cpanel/spamtitan on your cPanel server using the root user. Edit the file to update the $base_uri and $token information using your SpamTitan information. Please note there are two locations to update. Usually something like spamtitan.mycompany.com is what they suggest you create after signup and the API token can be generated on the Settings -> Access/Authentication page.
 
 To integrate it into the system, run:
 
-/usr/local/cpanel/bin/manage_hooks add module STaddEmail
+>/usr/local/cpanel/bin/manage_hooks add script /var/cpanel/spamtitan/SpamTitanDomains.php
 
 Output should be something like:
-
-Added hook for Cpanel::UAPI::Email::add_pop to hooks registry
-
-Added hook for Cpanel::UAPI::Email::delete_pop to hooks registry
-
-Added hook for Cpanel::UAPI::Email::add_forwarder to hooks registry
-
-etc
-
-
-
+<pre>
+# /usr/local/cpanel/bin/manage_hooks add script /var/cpanel/spamtitan/SpamTitanDomains.php
+Added hook for Whostmgr::Accounts::Create to hooks registry
+Added hook for Whostmgr::Domain::park to hooks registry
+Added hook for Whostmgr::Accounts::Remove to hooks registry
+Added hook for Whostmgr::Domain::unpark to hooks registry
+Added hook for Cpanel::Api2::Email::setmxcheck to hooks registry
+</pre>
 To remove it from your installation:
 
-/usr/local/cpanel/bin/manage_hooks del module STaddEmail
+> /usr/local/cpanel/bin/manage_hooks del script /var/cpanel/spamtitan/SpamTitanDomains.php
 
 Output should be something like:
+<pre>
+# /usr/local/cpanel/bin/manage_hooks del script /var/cpanel/spamtitan/SpamTitanDomains.php
+Deleted hook /var/cpanel/spamtitan/SpamTitanDomains.php --createaccount for Whostmgr::Accounts::Create in hooks registry
+Deleted hook /var/cpanel/spamtitan/SpamTitanDomains.php --domainpark for Whostmgr::Domain::park in hooks registry
+Deleted hook /var/cpanel/spamtitan/SpamTitanDomains.php --removeaccount for Whostmgr::Accounts::Remove in hooks registry
+Deleted hook /var/cpanel/spamtitan/SpamTitanDomains.php --domainunpark for Whostmgr::Domain::unpark in hooks registry
+Deleted hook /var/cpanel/spamtitan/SpamTitanDomains.php --checkmx for Cpanel::Api2::Email::setmxcheck in hooks registry
+</pre>
 
-Deleted hook STaddEmail::addemail for Cpanel::UAPI::Email::add_pop in hooks registry
+To verify if it's working -
 
-Deleted hook STaddEmail::deleteemail for Cpanel::UAPI::Email::delete_pop in hooks registry
+> tail -f /usr/local/cpanel/logs/error_log
 
-Deleted hook STaddEmail::addforwarder for Cpanel::UAPI::Email::add_forwarder in hooks registry
-
-etc
-
-
-
-To verify if it's working - while running:
-
-tail -f /usr/local/cpanel/logs/error_log
-
-Create a new account, add an alias domain / addon domain, or create an email or forwarder and you should see log output resembling that 
+Create a new account, add an alias domain / addon domain, or change MX routing from local to remote or vise versa and you should see log output resembling that 
 of the code.
-
-
-
 
