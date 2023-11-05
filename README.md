@@ -31,7 +31,7 @@ SpamTitan v8.00.46 and cPanel v110.0.14
   
 ### How to Install
 
-Create a directory /var/cpanel/spamtitan and copy the SpamTitanDomains.php to /var/cpanel/spamtitan on your cPanel server using the root user. Edit the file to update the $base_uri and $token information using your SpamTitan information. Please note there are two locations to update. Usually something like spamtitan.mycompany.com is what they suggest you create after signup and the API token can be generated on the Settings -> Access/Authentication page.
+Create a directory /var/cpanel/spamtitan and copy the SpamTitanDomains.php to /var/cpanel/spamtitan on your cPanel server using the root user. Edit the file to update the $baseurl and $token information using your SpamTitan information. 
 
 To integrate it into the system, run:
 
