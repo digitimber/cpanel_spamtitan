@@ -1,8 +1,12 @@
 #!/usr/local/bin/php -q
 <?php
 
-// SpamTitan Rest API Interface - rlohman@digitimber.com - 11/5/23
-// /var/cpanel/spamtitan/SpamTitanDomains.php
+// SpamTitan Rest API Interface - github@digitimber.com - 11/5/23
+// File Location: /var/cpanel/spamtitan/SpamTitanDomains.php
+
+// Configuration: Please update accordingly
+    $token = 'CHANGEME';
+    $baseurl = 'https://spamtitan.example.com/restapi/domains';  
 
 // Any switches passed to this script invoke different function calls. Describe section is handled automatically by hook_manager
 $switches = (count($argv) > 1) ? $argv : array();
@@ -103,118 +107,141 @@ function get_passed_data() {
     return $input_data;
 }
 
-function create_domain($domain){
-    //echo "DEBUG: Create Domain \n";
-	$token = 'CHANGEME';
-	$baseurl = 'https://spamtitan.example.com/restapi/domains';  
-	$rest = curl_init();  
+// Create the domain on the SpamTitan Appliance and setup a policy and auth method (Send daily reports and IMAPS auth)
+function create_domain($domain) {
 
-	// Create the domain
-	$CreateDomain = array(
-	        "domain" => "$domain",
-        	"destination" => "mail.$domain"
-	);
-	$CurQuery = json_encode($CreateDomain);
-	$headers = array(
-	    'Accept: application/json',
-	    "Authorization: Bearer $token",
-	    "Content-Type: application/json",
-	    'Content-Length: ' . strlen($CurQuery)
-	);
-	 curl_setopt($rest,CURLOPT_HTTPHEADER,$headers);  
-	 curl_setopt($rest,CURLOPT_SSL_VERIFYPEER, false);  
-	 curl_setopt($rest,CURLOPT_RETURNTRANSFER, true);  
-	 curl_setopt($rest,CURLOPT_URL,$baseurl);  
-	 curl_setopt($rest,CURLOPT_POST, 1);
-	 curl_setopt($rest,CURLOPT_POSTFIELDS,$CurQuery);  
-	 $response = curl_exec($rest);  
-	 curl_close($rest);
+    global $token, $baseurl;
 
-	$rest = curl_init();
-	$data = array(
-        	"qreport_enabled" => "true",
-	        "qreport_frequency" => "D",
-	        "qreport_contains" => "N"
-	);
-	$httpQuery = http_build_query($data);
-	$headers = array(
-	    'Accept: application/json',
-	    "Authorization: Bearer $token",
-	    'Content-Length: ' . strlen($httpQuery)
-	);
-	curl_setopt($rest, CURLOPT_HTTPHEADER, $headers);
-	curl_setopt($rest, CURLOPT_URL,$baseurl."/$domain/policy");  
-	curl_setopt($rest, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($rest, CURLOPT_HEADER, 0);
-	curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($rest, CURLOPT_CUSTOMREQUEST, "PUT");
-	curl_setopt($rest, CURLOPT_POSTFIELDS,$httpQuery);
+    // Create the domain data
+    $domainData = [
+        "domain" => $domain,
+        "destination" => "mail.$domain"
+    ];
 
-	$output = curl_exec($rest);
-	curl_close($rest);
+    // Initialize a cURL session
+    $ch = curl_init();
 
-	$rest = curl_init();
-	$data = array(
-	        "auth_type" => "imap",
-        	"imap" => array( 
-			"server" => "mail.$domain",
-			"port" => "993",
-			"secure" => "true",
-			"address_type" => "user@domain")
-	);
-	$httpQuery = http_build_query($data);
-	$headers = array(
-	    'Accept: application/json',
-	    "Authorization: Bearer $token",
-	    'Content-Length: ' . strlen($httpQuery)
-	);
-	curl_setopt($rest, CURLOPT_HTTPHEADER, $headers);
-	curl_setopt($rest, CURLOPT_URL,$baseurl."/$domain/auth");  
-	curl_setopt($rest, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($rest, CURLOPT_HEADER, 0);
-	curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($rest, CURLOPT_CUSTOMREQUEST, "PUT");
-	curl_setopt($rest, CURLOPT_POSTFIELDS,$httpQuery);
+    // Step 1: Create the domain
+    // Set cURL options for POST request
+    $postOptions = [
+        CURLOPT_URL => $baseurl,
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            "Authorization: Bearer $token",
+            "Content-Type: application/json",
+        ],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($domainData),
+    ];
+    curl_setopt_array($ch, $postOptions);
 
-	$output = curl_exec($rest);
-	curl_close($rest);
+    // Execute the cURL request and close the session
+    $response = curl_exec($ch);
+    curl_close($ch);
 
+    // Step 2: Configure quarantine reports
+    $ch = curl_init();
+    $qreportData = [
+        "qreport_enabled" => "true",
+        "qreport_frequency" => "D",
+        "qreport_contains" => "N",
+    ];
+
+    // Set cURL options for a PUT request
+    $putOptions = [
+        CURLOPT_URL => "$baseurl/$domain/policy",
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            "Authorization: Bearer $token",
+        ],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_CUSTOMREQUEST => "PUT",
+        CURLOPT_POSTFIELDS => http_build_query($qreportData),
+    ];
+    curl_setopt_array($ch, $putOptions);
+
+    $output = curl_exec($ch);
+    curl_close($ch);
+
+    // Step 3: Configure authentication settings
+    $ch = curl_init();
+    $authData = [
+        "auth_type" => "imap",
+        "imap" => [
+            "server" => "mail.$domain",
+            "port" => "993",
+            "secure" => "true",
+            "address_type" => "user@domain",
+        ],
+    ];
+
+    // Set cURL options for a PUT request
+    $putOptions = [
+        CURLOPT_URL => "$baseurl/$domain/auth",
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            "Authorization: Bearer $token",
+        ],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_CUSTOMREQUEST => "PUT",
+        CURLOPT_POSTFIELDS => http_build_query($authData),
+    ];
+    curl_setopt_array($ch, $putOptions);
+
+    $output = curl_exec($ch);
+    curl_close($ch);
+
+    // End of the code
 }
+
+// Remove domain from SpamTitan Appliance
 function delete_domain($domain) {
-    //echo "DEBUG: Delete Domain \n";
-	$token = 'CHANGEME';
-	$baseurl = 'https://spamtitan.example.com/restapi/domains';  
+    global $token, $baseurl;
 
-	$rest = curl_init();  
+    // Initialize a cURL session
+    $ch = curl_init();
 
-	// Find the domain ID
-	$headers = array(
-	    'Accept: application/json',
-	    "Authorization: Bearer $token",
-	    "Content-Type: application/json"
-	);
-	 curl_setopt($rest,CURLOPT_HTTPHEADER,$headers);  
-	 curl_setopt($rest,CURLOPT_SSL_VERIFYPEER, false);  
-	 curl_setopt($rest,CURLOPT_RETURNTRANSFER, true);  
-	 curl_setopt($rest,CURLOPT_URL,$baseurl."/$domain");  
-	 $response = curl_exec($rest);  
-	 $data = json_decode($response, true);
-	 curl_close($rest);
+    // Step 1: Find the domain ID
+    // Set cURL options for GET request
+    $getOptions = [
+        CURLOPT_URL => "$baseurl/$domain",
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            "Authorization: Bearer $token",
+            "Content-Type: application/json",
+        ],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_RETURNTRANSFER => true,
+    ];
+    curl_setopt_array($ch, $getOptions);
 
-	$rest = curl_init();
-	$headers = array(
-	    'Accept: application/json',
-	    "Authorization: Bearer $token"
-	);
-	curl_setopt($rest, CURLOPT_HTTPHEADER, $headers);
-	curl_setopt($rest, CURLOPT_URL,$baseurl."/".$data['id']);
-	curl_setopt($rest, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($rest, CURLOPT_HEADER, 0);
-	curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, false);
-	curl_setopt($rest, CURLOPT_CUSTOMREQUEST, "DELETE");
+    // Execute the cURL request and get the response
+    $response = curl_exec($ch);
+    $data = json_decode($response, true);
+    curl_close($ch);
 
-	$output = curl_exec($rest);
-	curl_close($rest);
+    // Step 2: Delete the domain using the retrieved domain ID
+    $ch = curl_init();
+
+    // Set cURL options for DELETE request
+    $deleteOptions = [
+        CURLOPT_URL => "$baseurl/{$data['id']}",
+        CURLOPT_HTTPHEADER => [
+            'Accept: application/json',
+            "Authorization: Bearer $token",
+        ],
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_CUSTOMREQUEST => "DELETE",
+    ];
+    curl_setopt_array($ch, $deleteOptions);
+
+    // Execute the cURL request and close the session
+    $output = curl_exec($ch);
+    curl_close($ch);
+
+    // End of the code
 }
 
 
@@ -224,6 +251,7 @@ function acctadd($input) {
 	create_domain($curDomain);
 	return array(0, "OK");
 }
+
 function acctremove($input) {
 	$curUser = $input['data']['user'];		
 	echo "Removing Account: $curUser\r\n";
@@ -244,6 +272,7 @@ function acctremove($input) {
 
 	return array(0, "OK");
 }
+
 function park($input) {
 	$curDomain = $input['data']['new_domain'];		
 	echo "Creating domain: $curDomain\r\n";
