@@ -287,21 +287,36 @@ function unpark($input) {
 	return array(0, "OK");
 }
 
+// Function to check and modify MX settings for a domain
 function checkmx($input) {
-	$checkmx = "local"; // Set the variable to start
-	if ($input['data']['args']['mxcheck'] == "auto") {
-		$checkmx = $input['data']['output'][0]['detected'];
-	} else if ($input['data']['args']['mxcheck'] == "secondary") {
-		$checkmx = "local";
-	} else {
-		$checkmx = $input['data']['args']['mxcheck'];
-	}
-	echo "CheckMX: Setting ". $input['data']['args']['domain']." to $checkmx\r\n";
-	if ($checkmx == "local") {
-		create_domain($input['data']['args']['domain']);
-	} else {
-		delete_domain($input['data']['args']['domain']);
-	}
-	return array(0, "OK");
+    // Set the default value for $checkmx to "local"
+    $checkmx = "local";
+
+    // Check the value of 'mxcheck' from input
+    if ($input['data']['args']['mxcheck'] == "auto") {
+        // If 'mxcheck' is "auto", need to set the detected value from another data point, should be 'remote' or 'local'
+        $checkmx = $input['data']['output'][0]['detected'];
+    } elseif ($input['data']['args']['mxcheck'] == "secondary") {
+        // If 'mxcheck' is "secondary", set $checkmx to "local"
+        $checkmx = "local";
+    } else {
+        // If 'mxcheck' has a custom value (should be 'remote' or 'local'), use that value for $checkmx
+        $checkmx = $input['data']['args']['mxcheck'];
+    }
+
+    // Output a message indicating the setting change
+    echo "CheckMX: Setting " . $input['data']['args']['domain'] . " to $checkmx\r\n";
+
+    // Check the value of $checkmx and perform corresponding actions
+    if ($checkmx == "local") {
+        // If $checkmx is "local", create the domain
+        create_domain($input['data']['args']['domain']);
+    } else {
+        // If $checkmx is not "local", delete the domain
+        delete_domain($input['data']['args']['domain']);
+    }
+
+    // Return a status array
+    return array(0, "OK");
 }
 ?>
