@@ -1,5 +1,4 @@
 # Obsolete - DO NOT USE
-
 # Created 8/14/2019 to add and remove listed valid emails to SpamTitan when the customers add and remove email boxes and forwarders.
 # Updated 10/10/19 to add/remove domain based on local/remote mail exchanger, add/remove of alias/addon domain, and creation/termination of account
 
