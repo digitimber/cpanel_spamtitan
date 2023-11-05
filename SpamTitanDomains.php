@@ -251,26 +251,35 @@ function acctadd($input) {
 	create_domain($curDomain);
 	return array(0, "OK");
 }
-
+// Function to remove an account and associated domains
 function acctremove($input) {
-	$curUser = $input['data']['user'];		
-	echo "Removing Account: $curUser\r\n";
+    // Get the current user to remove
+    $curUser = $input['data']['user'];    
+    echo "Removing Account: $curUser\r\n";
 
-        exec("uapi --output=jsonpretty --user=$curUser DomainInfo list_domains", $output);
-        $output = json_decode(implode("\n", $output));
-        $data = $output->result->data;
-        echo "Deleting: " . $data->main_domain . "\r\n";
-	delete_domain($data->main_domain);
-        for ($i=0;$i<sizeof($data->parked_domains);$i++) {
-                echo "Deleting: " . $data->parked_domains[$i] . "\r\n";
-		delete_domain($data->parked_domains[$i]);
-        }
-        for ($i=0;$i<sizeof($data->addon_domains);$i++) {
-                echo "Deleting: " . $data->addon_domains[$i] . "\r\n";
-		delete_domain($data->addon_domains[$i]);
-        }
+    // Use uapi to list the domains associated with the user
+    exec("uapi --output=jsonpretty --user=$curUser DomainInfo list_domains", $output);
+    $output = json_decode(implode("\n", $output));
+    $data = $output->result->data;
 
-	return array(0, "OK");
+    // Delete the main domain
+    echo "Deleting: " . $data->main_domain . "\r\n";
+    delete_domain($data->main_domain);
+
+    // Delete parked domains
+    for ($i = 0; $i < sizeof($data->parked_domains); $i++) {
+        echo "Deleting: " . $data->parked_domains[$i] . "\r\n";
+        delete_domain($data->parked_domains[$i]);
+    }
+
+    // Delete addon domains
+    for ($i = 0; $i < sizeof($data->addon_domains); $i++) {
+        echo "Deleting: " . $data->addon_domains[$i] . "\r\n";
+        delete_domain($data->addon_domains[$i]);
+    }
+
+    // Return a status array
+    return array(0, "OK");
 }
 
 function park($input) {
