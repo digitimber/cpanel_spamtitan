@@ -1,3 +1,10 @@
+# New Update 4/22/25
+<hr>
+
+New year, new issues, new script - the basis of rewriting this in BASH/SH is that our webserver security folks really didn't like the idea of allowing 'exec' to be avaialble for scripting. The only real way I could figure out how to get the list of domains from the username on the account removal was command line, so... now it's all command line. As usual, YMMV and its written by a novice at best, use at your own risk. Enjoy!
+
+
+
 # New Update 11/5/23
 <hr>
 
@@ -25,11 +32,12 @@ Thank you to everyone who contributes to the world wide knowledge base, without 
   
 
 ### Currently tested versions:
-SpamTitan v8.00.46 and cPanel v110.0.14
+PHP Script: SpamTitan v8.00.46 and cPanel v110.0.14 (Minimal testing on SpamTitan v8.01.07 and cPanel v126.0.14 - removal didn't work due to exec being disabled, but the rest did)
+BASH Script: SpamTitan v8.01.07 and cPanel v126.0.14
 
 <HR>
   
-### How to Install
+### How to Install (Mostly valid for the new 4/22/25 update, just change the filename accordingly (.php vs .sh) )
 
 Create a directory /var/cpanel/spamtitan and copy the SpamTitanDomains.php to /var/cpanel/spamtitan on your cPanel server using the root user. Edit the file to update the $baseurl and $token information using your SpamTitan information. 
 
